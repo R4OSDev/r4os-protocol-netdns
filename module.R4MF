@@ -1,0 +1,20 @@
+# R4OS 0.58.35 protocol project manifest.
+R4OS_MODULE_MANIFEST=2
+KIND=R4P
+NAME=NETDNS
+VERSION=0.1.1
+LANGUAGE=Zig
+SOURCE=src/main.zig
+TARGET=/R4OS/PROTOCOLS/NETDNS.R4P
+IMAGE_SCOPE=slim
+IMPORT=R4DEV:Query:1
+META=r4p.name=NETDNS
+META=r4p.role=net.dns
+META=r4p.category=net
+META=module.name=R4P_NETDNS
+META=r4p.dep=net.udp
+META=r4p.dep=net.ipv4
+META=description=DNS A query parser and builder
+META=feature=dispatch
+META=dependency=net.udp
+META=dependency=net.ipv4
