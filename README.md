@@ -29,6 +29,12 @@ mapped local checkouts.
 
 ## Documentation
 
+The source package also exports the transport-independent `address_codec`
+Zig module. `DnsService` pins and reuses that complete A/AAAA answer codec.
+Run `./Build.sh test` (Windows: `Build.bat test`) for its wire fixtures.
+The existing R4P dispatch and artifact version remain unchanged; codec
+availability alone does not advertise an IPv6 network provider.
+
 Detailed German technical notes from the migration are preserved in
 `DOCUMENTATION.de.txt`. Source-transfer provenance is recorded in
 `PROVENANCE.txt`.

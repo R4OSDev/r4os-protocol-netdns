@@ -20,3 +20,31 @@ Manifest:
     module.R4MF
 
 Image-Zielpfad: C:\R4OS\PROTOCOLS\NETDNS.R4P
+
+DNS-Adresscodec seit0.90.31
+--------------------------
+src/address_codec.zig gehoert diesem Protokollbesitzer und wird als Zigmodul
+address_codec exportiert. DnsService bindet dieselbe gepinnte Quelle ein;
+es entsteht kein zweiter DNS-Parser im SDK oder Kernel. Der bisherige
+R4P-Dispatch und sein DnsOp-Layout bleiben unveraendert.
+
+Der neue kopierende Codec baut A-/AAAA-Fragen und prueft vollstaendige
+Antworten gegen Transaktions-ID, Name, Fragetyp und Klasse. Er behaelt alle
+bis zu32 unterschiedlichen Adressen, verfolgt bis zu16 CNAME-Aliase und
+begrenzt komprimierte Namen sowie Nachrichten auf4096 Bytes. Zu grosse
+Antwortmengen schlagen fehl. Null-TTL bleibt null; nur zur passenden
+Frage gehoerende Antworten liefern Adressen. Authority/Additional werden
+strukturell geprueft, aber nicht als ungefragte Antworten uebernommen.
+
+Eingabenamen sind ausdruecklich ASCII-DNS-Labels, optional mit Schlussdot.
+IDNA, DNSSEC und DNS-over-TCP sind hier nicht implementiert. Ein AAAA-Codec
+belegt keine IPv6-Transportfaehigkeit. RFC3596 trennt Record- und
+Transportfamilie ausdruecklich.
+
+Besitzertest: ./Build.sh test beziehungsweise Build.bat test.
+src/address_codec_tests.zig enthaelt unabhaengige A-/AAAA-/CNAME-Wirevektoren,
+Null-TTL, Kapazitaet, Fragenbindung und fehlerhafte Kompression.
+
+Wiregrundlagen:
+https://www.rfc-editor.org/rfc/rfc1035.html
+https://datatracker.ietf.org/doc/html/rfc3596

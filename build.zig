@@ -6,6 +6,13 @@ const std = @import("std");
 /// Typ beziehungsweise Rolle und Metadaten ein zweites Mal hinzuschreiben.
 /// Damit gibt es hier nichts mehr, was vom Manifest abweichen koennte.
 pub fn build(b: *std.Build) void {
+    _ = b.addModule("address_codec", .{ .root_source_file = b.path("src/address_codec.zig") });
+    const tests = b.addTest(.{ .root_module = b.createModule(.{
+        .root_source_file = b.path("src/address_codec_tests.zig"),
+        .target = b.graph.host,
+        .optimize = .ReleaseSafe,
+    }) });
+    b.step("test", "Check DNS A/AAAA complete-answer wire cases").dependOn(&b.addRunArtifact(tests).step);
     const sdk_build = b.lazyImport(@This(), "r4os_sdk") orelse return;
     const sdk_dep = b.dependencyFromBuildZig(sdk_build, .{});
     const sdk = sdk_build.sdk(b, sdk_dep, .{});
