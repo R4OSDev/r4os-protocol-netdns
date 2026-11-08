@@ -35,6 +35,15 @@ test "transaction and complete question binding leave result unchanged on failur
     try equal(@as(usize, 17), out.count);
 }
 
+test "RFC2181 high-bit TTL is zero and never becomes a long cache lease" {
+    var response = (question ++ rr1 ++ rr2).*;
+    response[question.len + 6] = 0x80;
+    var out: dns.Answer = .{};
+    try dns.parseResponse(&response, 0x1234, "a.test", .ipv4, &out);
+    try equal(@as(u32, 0), out.addresses[0].ttl_seconds);
+    try equal(@as(u32, 0), out.ttl_seconds);
+}
+
 test "AAAA records are complete 128bit addresses independent of transport" {
     const response = "\x12\x34\x81\x80\x00\x01\x00\x02\x00\x00\x00\x00" ++
         "\x01a\x04test\x00\x00\x1c\x00\x01" ++

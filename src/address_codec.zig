@@ -128,7 +128,10 @@ fn record(data: []const u8, initial: usize) Error!Record {
         const target = try decodeName(data, start);
         if (target.next != start + length) return error.Malformed;
     }
-    return .{ .owner = decoded.name, .kind = kind, .class = class, .ttl = get32(data, pos + 4), .data = start, .length = length, .next = start + length };
+    const ttl = get32(data, pos + 4);
+    // RFC2181 section8: an incoming TTL with its high bit set means zero,
+    // rather than a multi-decade cache lease or a signed integer wrap.
+    return .{ .owner = decoded.name, .kind = kind, .class = class, .ttl = if (ttl & 0x80000000 != 0) 0 else ttl, .data = start, .length = length, .next = start + length };
 }
 /// Validates a complete answer for the exact transaction, question and type.
 /// Only the answer section and the question's CNAME chain supply addresses.

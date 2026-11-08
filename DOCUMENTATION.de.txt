@@ -43,8 +43,11 @@ Transportfamilie ausdruecklich.
 
 Besitzertest: ./Build.sh test beziehungsweise Build.bat test.
 src/address_codec_tests.zig enthaelt unabhaengige A-/AAAA-/CNAME-Wirevektoren,
-Null-TTL, Kapazitaet, Fragenbindung und fehlerhafte Kompression.
+Null-/Highbit-TTL, Kapazitaet, Fragenbindung und fehlerhafte Kompression.
+TTL mit gesetztem obersten Bit wird gemaess RFC2181 Abschnitt8 als null
+behandelt, nicht als mehrjaehrige Cachefrist.
 
 Wiregrundlagen:
 https://www.rfc-editor.org/rfc/rfc1035.html
 https://datatracker.ietf.org/doc/html/rfc3596
+https://www.rfc-editor.org/rfc/rfc2181.html
