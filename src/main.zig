@@ -5,15 +5,18 @@ const TYPE_CNAME: u16 = 5;
 const CLASS_IN: u16 = 1;
 
 comptime {
-    asm (r4os.r4dev.protocolEntriesAsm("netdns_init", "netdns_shutdown", "netdns_query", "netdns_dispatch"));
+    if (!@import("builtin").is_test) asm (r4os.technical2.protocolEntriesAsm("netdns_init", "netdns_shutdown", "netdns_query", "netdns_dispatch"));
 }
 
-export fn netdns_init(api: *const r4os.r4dev.ProtocolApi) callconv(.c) i32 {
-    var ctx = r4os.r4dev.ProtocolContext.init(api);
-    ctx.logInfo("NETDNS.R4P init");
-    _ = ctx.registerRole("net.dns", .net, 0);
-    _ = ctx.setStatus(.active, "DNS R4P active");
-    return 0;
+export fn netdns_init(api: *const r4os.technical2.abi.ProtocolApi2) callconv(.c) i32 {
+    const view = r4os.technical2.Protocol.init(api) orelse return r4os.abi.network_error_backend;
+    const log = view.function("log_info") orelse return r4os.abi.err_no_fn;
+    const register = view.function("register_role") orelse return r4os.abi.err_no_fn;
+    const status = view.function("set_status") orelse return r4os.abi.err_no_fn;
+    log("NETDNS.R4P init");
+    const registered = register("net.dns", @intFromEnum(r4os.abi.ProtocolCategory.net), 0);
+    if (registered != 0) return registered;
+    return status(@intFromEnum(r4os.abi.ProtocolState.active), "DNS R4P active");
 }
 
 export fn netdns_shutdown() callconv(.c) i32 {
@@ -136,9 +139,12 @@ fn handleResponse(request: *r4os.abi.DnsOp) void {
 }
 
 fn requestFromBuffer(buffer: *const r4os.abi.ProtocolBuffer) ?*r4os.abi.DnsOp {
-    if (buffer.data == null) return null;
-    if (buffer.len < @sizeOf(r4os.abi.DnsOp)) return null;
-    return @ptrCast(@alignCast(buffer.data.?));
+    // The legacy operation is an exclusive in/out native record, despite
+    // the const transport metadata. No packet bytes are native-cast here.
+    const native = r4os.native_protocol_view;
+    var metadata = buffer.*;
+    const view = native.InOut(r4os.abi.DnsOp).init(&metadata, native.Policy.record(r4os.abi.DnsOp, .inout, .prefix)) catch return null;
+    return view.value;
 }
 
 fn writeName(out: []u8, pos_in: usize, name: []const u8) ?usize {
@@ -182,12 +188,15 @@ fn skipName(payload: []const u8, pos_in: usize) ?usize {
 }
 
 fn readBe16(buf: []const u8, offset: usize) u16 {
-    return (@as(u16, buf[offset]) << 8) | buf[offset + 1];
+    var reader = r4os.binary_cursor.Reader.init(buf) catch unreachable;
+    _ = reader.take(offset) catch unreachable;
+    return reader.readInt(u16, .big) catch unreachable;
 }
 
 fn writeBe16(buf: []u8, offset: usize, value: u16) void {
-    buf[offset] = @intCast(value >> 8);
-    buf[offset + 1] = @intCast(value & 0xFF);
+    var writer = r4os.binary_cursor.Writer.init(buf) catch unreachable;
+    writer.position = offset;
+    writer.writeInt(u16, value, .big) catch unreachable;
 }
 
 fn note(comptime text: []const u8) [64]u8 {
